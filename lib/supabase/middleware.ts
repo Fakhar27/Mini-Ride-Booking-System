@@ -45,16 +45,55 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    request.nextUrl.pathname !== "/" &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  const pathname = request.nextUrl.pathname;
+
+  // Define public routes that don't need authentication
+  const isPublicRoute = pathname === "/" || pathname === "/auth/login" || pathname === "/auth/sign-up";
+  
+  // Define protected route patterns
+  const isPassengerRoute = pathname.startsWith("/passenger");
+  const isDriverRoute = pathname.startsWith("/driver");
+  const isProtectedRoute = isPassengerRoute || isDriverRoute || pathname === "/dashboard";
+
+  // If no user and trying to access protected routes, redirect to login
+  if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
+  }
+
+  // If user exists, check role-based access
+  if (user && (isPassengerRoute || isDriverRoute || pathname === "/dashboard")) {
+    // Fetch user profile to check role
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile) {
+      const userRole = profile.role;
+      
+      // Redirect if user tries to access wrong role's routes
+      if (isPassengerRoute && userRole === "DRIVER") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/driver/dashboard";
+        return NextResponse.redirect(url);
+      }
+      
+      if (isDriverRoute && userRole === "PASSENGER") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/passenger/dashboard";
+        return NextResponse.redirect(url);
+      }
+      
+      // Handle generic /dashboard route
+      if (pathname === "/dashboard") {
+        const url = request.nextUrl.clone();
+        url.pathname = userRole === "DRIVER" ? "/driver/dashboard" : "/passenger/dashboard";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
