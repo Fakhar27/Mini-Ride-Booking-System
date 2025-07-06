@@ -84,6 +84,10 @@ export function SignUpForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
+      <div className="flex flex-col items-center gap-2 mb-4">
+        <h1 className="text-3xl font-bold">Jeeny</h1>
+        <p className="text-sm text-muted-foreground">Your Ride Companion</p>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Sign up</CardTitle>
