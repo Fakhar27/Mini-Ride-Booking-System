@@ -31,17 +31,48 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create ride with REQUESTED status
+    // Find an available driver first
+    const { data: availableDrivers, error: driverError } = await supabase
+      .from('drivers')
+      .select('id, name')
+      .eq('availability_status', 'AVAILABLE')
+      .limit(1);
+
+    if (driverError) {
+      console.error('Error finding available driver:', driverError);
+      return NextResponse.json(
+        { error: "Error finding available drivers" },
+        { status: 500 }
+      );
+    }
+
+    if (!availableDrivers || availableDrivers.length === 0) {
+      return NextResponse.json(
+        { error: "No available drivers at the moment" },
+        { status: 503 }
+      );
+    }
+
+    const availableDriver = availableDrivers[0];
+
+    // Create ride with driver already assigned and status ACCEPTED
     const { data: ride, error: createError } = await supabase
       .from('rides')
       .insert({
         passenger_id: user.id,
+        driver_id: availableDriver.id,
         pickup_location,
         drop_location,
         ride_type,
-        status: 'REQUESTED'
+        status: 'ACCEPTED'
       })
-      .select()
+      .select(`
+        *,
+        driver:drivers!driver_id (
+          id,
+          name
+        )
+      `)
       .single();
 
     if (createError || !ride) {
@@ -52,85 +83,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // Schedule driver assignment after 5 seconds
-    setTimeout(async () => {
-      try {
-        // Find an available driver
-        const { data: availableDriver } = await supabase
-          .from('drivers')
-          .select('id, name')
-          .eq('availability_status', 'AVAILABLE')
-          .limit(1)
-          .single();
+    // Mark driver as BUSY
+    const { error: updateDriverError } = await supabase
+      .from('drivers')
+      .update({ availability_status: 'BUSY' })
+      .eq('id', availableDriver.id);
 
-        if (availableDriver) {
-          // Update ride with driver
-          await supabase
-            .from('rides')
-            .update({ 
-              driver_id: availableDriver.id,
-              status: 'ACCEPTED'
-            })
-            .eq('id', ride.id);
+    if (updateDriverError) {
+      console.error('Error updating driver availability:', updateDriverError);
+      // Continue anyway - ride is created
+    }
 
-          // Mark driver as BUSY
-          await supabase
-            .from('drivers')
-            .update({ availability_status: 'BUSY' })
-            .eq('id', availableDriver.id);
-
-          console.log(`Ride ${ride.id} assigned to driver ${availableDriver.name}`);
-        } else {
-          console.log(`No available drivers for ride ${ride.id}`);
-        }
-      } catch (error) {
-        console.error('Error assigning driver:', error);
-      }
-    }, 5000);
-
-    // Schedule ride start after 15 seconds
-    setTimeout(async () => {
-      try {
-        await supabase
-          .from('rides')
-          .update({ status: 'IN_PROGRESS' })
-          .eq('id', ride.id);
-
-        console.log(`Ride ${ride.id} started`);
-      } catch (error) {
-        console.error('Error starting ride:', error);
-      }
-    }, 15000);
-
-    // Schedule ride completion after 35 seconds
-    setTimeout(async () => {
-      try {
-        // Get the driver_id to release them
-        const { data: rideData } = await supabase
-          .from('rides')
-          .select('driver_id')
-          .eq('id', ride.id)
-          .single();
-
-        // Update ride status to COMPLETED
-        await supabase
-          .from('rides')
-          .update({ status: 'COMPLETED' })
-          .eq('id', ride.id);
-
-        // Make driver available again
-        if (rideData?.driver_id) {
-          await supabase
-            .from('drivers')
-            .update({ availability_status: 'AVAILABLE' })
-            .eq('id', rideData.driver_id);
-
-          console.log(`Ride ${ride.id} completed, driver released`);
-        }
-      } catch (error) {
-        console.error('Error completing ride:', error);
-      }
-    }, 35000);
+    console.log(`Ride ${ride.id} created and assigned to driver ${availableDriver.name}`);
 
     return NextResponse.json(ride);
   } catch (error) {
