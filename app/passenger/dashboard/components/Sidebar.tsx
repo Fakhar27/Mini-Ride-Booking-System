@@ -3,11 +3,7 @@
 import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MapIcon, Navigation, History } from 'lucide-react';
 
-interface SidebarProps {
-  activeTab: string;
-}
-
-export function Sidebar({ activeTab }: SidebarProps) {
+export function Sidebar() {
   return (
     <div className="pt-8 pb-6">
       <TabsList className="grid grid-cols-3 w-full h-auto rounded-lg bg-muted/20 p-1.5">

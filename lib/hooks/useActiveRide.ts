@@ -98,7 +98,8 @@ export function useActiveRide() {
     return () => {
       clearInterval(interval);
       // Clear all timers
-      Object.values(statusTimersRef.current).forEach(timer => clearTimeout(timer));
+      const timers = statusTimersRef.current;
+      Object.values(timers).forEach(timer => clearTimeout(timer));
     };
   }, []);
 

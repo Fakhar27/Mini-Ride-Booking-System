@@ -13,7 +13,7 @@ export function DashboardClient() {
   return (
     <div className="container mt-4 mx-auto p-0">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <Sidebar activeTab={activeTab} />
+        <Sidebar />
         
         <div className="mt-2">
           <TabsContent value="request" className="m-0">

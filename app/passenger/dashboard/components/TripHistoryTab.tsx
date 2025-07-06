@@ -2,8 +2,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { useRideHistory } from '@/lib/hooks/useRideHistory';
 import { TripCard } from './shared/TripCard';
 import { Loader2 } from 'lucide-react';
