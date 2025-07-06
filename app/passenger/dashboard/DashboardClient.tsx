@@ -11,22 +11,20 @@ export function DashboardClient() {
   const [activeTab, setActiveTab] = useState('request');
 
   return (
-    <div className="container mx-auto p-0">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-[calc(100vh-5rem)]">
-        <div className="w-64 border-r bg-muted/10">
-          <Sidebar activeTab={activeTab} />
-        </div>
+    <div className="container mt-4 mx-auto p-0">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Sidebar activeTab={activeTab} />
         
-        <div className="flex-1 overflow-auto">
-          <TabsContent value="request" className="m-0 h-full">
+        <div className="mt-2">
+          <TabsContent value="request" className="m-0">
             <RequestRideTab onRideRequested={() => setActiveTab('live')} />
           </TabsContent>
           
-          <TabsContent value="live" className="m-0 h-full">
+          <TabsContent value="live" className="m-0">
             <LiveTrackingTab />
           </TabsContent>
           
-          <TabsContent value="history" className="m-0 h-full">
+          <TabsContent value="history" className="m-0">
             <TripHistoryTab />
           </TabsContent>
         </div>

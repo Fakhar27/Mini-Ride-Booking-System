@@ -4,8 +4,9 @@ import { NextResponse } from "next/server";
 // PUT /api/rides/[id]/status - Update ride status
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  props: { params: Promise<{ id: string }> }
 ) {
+  const params = await props.params;
   try {
     const supabase = await createClient();
     
